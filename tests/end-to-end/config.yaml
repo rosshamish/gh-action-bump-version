@@ -174,7 +174,7 @@ suites:
     tests:
       - message: no keywords
         expected:
-          # TODO(roander) needs skip-tag as well?
+          # TODO(rosshamish) needs skip-tag as well? or nah? if nah, add a skip-tag test case
           version: 4.1.4
           message: 'ci: version bump to 4.1.3'
   - name: skip-push

@@ -24,6 +24,10 @@ config.suites.forEach((suite) => {
       const pushYamlPath = join('.github', 'workflows', 'push.yml');
       await mkdir(join(cwd(), '.github', 'workflows'), { recursive: true });
       await writeFile(join(cwd(), pushYamlPath), suiteYaml);
+
+      // TODO(rosshamish) check out a branch based on the current PR branch
+      // or current ref being tested, to avoid branch contention if multiple
+      // PRs are being validated at the same time
       await git('add', pushYamlPath, '--force');
     });
     suite.tests.forEach((commit) => {
@@ -105,7 +109,7 @@ async function getMostRecentWorkflowRunDate() {
 function generateExpectationText({
   version: expectedVersion,
   tag: expectedTag,
-  branch: expectedBranch,
+  branch: expectedBranch, // TODO(rosshamish) prefix w/ base branch
   message: expectedMessage,
 }) {
   const results = [`- **Version:** ${expectedVersion}`];
@@ -124,7 +128,7 @@ function generateExpectationText({
 async function assertExpectation({
   version: expectedVersion,
   tag: expectedTag,
-  branch: expectedBranch,
+  branch: expectedBranch, // TODO(rosshamish) prefix w/ base branch
   message: expectedMessage,
 }) {
   if (expectedTag === undefined) {
@@ -147,7 +151,7 @@ async function assertExpectation({
   expect(latestTag).toBe(expectedTag);
   expect(latestMessage).toBe(expectedMessage);
   if (expectedBranch) {
-    await git('checkout', 'main');
+    await git('checkout', 'main'); // TODO(rosshamish) checkout the base branch instead of main
   }
 }
 
