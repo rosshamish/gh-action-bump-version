@@ -18,7 +18,7 @@ config.suites.forEach((suite) => {
   const suiteYaml = yaml.dump(suite.yaml);
   describe(suite.name, () => {
     beforeAll(async () => {
-      await git('config', 'user.email', 'Test@Test.com');
+      await git('config', 'user.email', 'Test@Runner.com');
       await git('config', 'user.name', 'Test Runner');
 
       const pushYamlPath = join('.github', 'workflows', 'push.yml');

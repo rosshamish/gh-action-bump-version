@@ -106,6 +106,16 @@ No commit is made after the version is bumped  (optional). Example:
     skip-commit:  'true'
 ```
 
+#### **skip-push:**
+No push is made after the version is bumped (optional). Example:
+```yaml
+- name:  'Automated Version Bump'
+  uses:  'phips28/gh-action-bump-version@master'
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    skip-push:  'true'
+```
 
 #### **PACKAGEJSON_DIR:**
 Param to parse the location of the desired package.json (optional). Example:
@@ -139,8 +149,8 @@ Set a custom commit message for version bump commit. Useful for skipping additio
     commit-message: 'CI: bumps version to {{version}} [skip ci]'
 ```
 
-#### **push:**
-Set false you want to avoid pushing the new version tag/package.json. Example:
+#### [DEPRECATED] **push:**
+**DEPRECATED** Set false you want to avoid pushing the new version tag/package.json. Example:
 ```yaml
 - name:  'Automated Version Bump'
   uses:  'phips28/gh-action-bump-version@master'

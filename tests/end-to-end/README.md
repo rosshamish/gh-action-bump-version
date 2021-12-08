@@ -8,4 +8,6 @@ To set up tests, you need:
 
 Add these as Repository Secrets in the repo, with names `TEST_REPO`, `TEST_TOKEN`, and `TEST_USER`, respectively.
 
+## Locally
 
+TODO(rosshamish)
