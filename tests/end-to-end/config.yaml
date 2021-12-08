@@ -175,8 +175,8 @@ suites:
     tests:
       - message: no keywords
         expected:
-          version: 4.1.4
-          message: 'ci: version bump to 4.1.3'
+          version: 4.1.2
+          message: 'no keywords'
   - name: skip-push
     yaml:
       name: Bump Version (Skip Push)
@@ -196,9 +196,8 @@ suites:
     tests:
       - message: no keywords
         expected:
-          # the 4.1.5 ci change was committed on the CI runner, but not pushed
-          version: 4.1.4
-          message: skip pushing the bumped version commit
+          version: 4.1.2
+          message: no keywords
   - name: skip-push-then-push
     yaml:
       name: Bump Version (Skip Push), then git push manually
@@ -219,7 +218,7 @@ suites:
     tests:
       - message: no keywords
         expected:
-          version: 4.1.5
+          version: 4.1.3
           message: 'ci: version bump to 4.1.5'
 
 
