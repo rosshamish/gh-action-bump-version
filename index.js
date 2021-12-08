@@ -173,16 +173,22 @@ const workspace = process.env.GITHUB_WORKSPACE;
       );
     }
 
-    if (process.env['INPUT_SKIP-TAG'] !== 'true') {
-      await runInWorkspace('git', ['tag', newVersion]);
-    }
-
+    const do_tag = ;
+    const do_push = ;
     const remoteRepo = `https://${process.env.GITHUB_ACTOR}:${process.env.GITHUB_TOKEN}@github.com/${process.env.GITHUB_REPOSITORY}.git`;
-    if (process.env['INPUT_SKIP-PUSH'] !== 'true') {
-      await runInWorkspace('git', ['push', remoteRepo]);
-      if (process.env['INPUT_SKIP-TAG'] !== 'true') {
+    if (process.env['INPUT_SKIP-TAG'] !== 'true') {
+      // skip-tag: false
+      await runInWorkspace('git', ['tag', newVersion]);
+      if (process.env['INPUT_SKIP-PUSH'] !== 'true') {
+        // skip-push: false
         await runInWorkspace('git', ['push', remoteRepo, '--follow-tags']);
-        await runInWorkspace('git', ['push', remoteRepo, '--tags']);
+        await runInWorkspace('git', ['push', remoteRepo, newVersion]);
+      }
+    } else {
+      // skip-tag: true
+      if (process.env['INPUT_SKIP-PUSH'] !== 'true') {
+        // skip-push: false
+        await runInWorkspace('git', ['push', remoteRepo]);
       }
     }
   } catch (e) {
