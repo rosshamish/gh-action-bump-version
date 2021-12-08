@@ -96,7 +96,7 @@ The tag is not added to the git repository  (optional). Example:
 ```
 
 #### **skip-commit:**
-No commit is made after the version is bumped  (optional). Example:
+No commit is made after the version is bumped (optional). Must be used in combination with `skip-tag`, since if there's no commit, there's nothing to tag. Example:
 ```yaml
 - name:  'Automated Version Bump'
   uses:  'phips28/gh-action-bump-version@master'
@@ -104,6 +104,7 @@ No commit is made after the version is bumped  (optional). Example:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
     skip-commit:  'true'
+    skip-tag: 'true'
 ```
 
 #### **skip-push:**
@@ -158,4 +159,55 @@ Set a custom commit message for version bump commit. Useful for skipping additio
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   with:
     push: false
+```
+
+## Contributing
+
+### Tests
+
+Pull requests are tested with the Github Actions workflow at `./github/workflows/pull-request.yml`, which runs
+an end to end test suite at `tests/end-to-end/index.test.js`. This test suite commits and pushes a series of changes to a blank test repo, allowing an `on: push` trigger to run this action on each push, then asserts certain expectations about the state of the repo after the action runs.
+
+It uses 3 [repository secrets](https://github.com/phips28/gh-action-bump-version/settings/secrets/actions):
+
+1. `TEST_REPO`, which is a URL in the form https://github.com/user-name/repo-name.git which points to a blank public Github repo.
+2. `TEST_USER`, which is the Github username of a user who has write access to the test repo.
+3. `TEST_TOKEN`, which is a Personal Access Token (PAT) from the test user which has full repo access and also workflows access.
+
+To add a new test, follow the existing examples in `tests/end-to-end/config.yml`, for example:
+
+```yml
+  - name: skip-push
+    yaml:
+      # A workflow which is triggered "on: push" for each item in "tests" below.
+      # Typically used to test different inputs to this action.
+      name: Bump Version (Skip Push)
+      on:
+        push:
+      jobs:
+        bump-version:
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@v2
+            - id: version-bump
+              uses: ./action
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                skip-push: true
+    # Each item in "tests" will produce a commit which will trigger
+    # the "on: push" workflow above.
+    tests:
+      - message: skip pushing the bumped version commit
+        # We can expect certain things to be true about the state of the repo
+        # **after** the workflow runs.
+        expected:
+          # Branch to check out before asserting expectations
+          branch: main
+          # Expected version in package.json
+          version: 4.1.4
+          # Expected message of the latest commit
+          message: skip pushing the bumped version commit
+          # Expected tag of the latest commit
+          tag: 4.1.4
 ```
