@@ -180,7 +180,7 @@ const workspace = process.env.GITHUB_WORKSPACE;
       if (process.env['INPUT_SKIP-PUSH'] !== 'true') {
         // skip-push: false
         await runInWorkspace('git', ['push', remoteRepo, '--follow-tags']);
-        await runInWorkspace('git', ['push', remoteRepo, newVersion]);
+        await runInWorkspace('git', ['push', remoteRepo, '--tags']);
       }
     } else {
       // skip-tag: true

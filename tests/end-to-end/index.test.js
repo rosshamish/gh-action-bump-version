@@ -35,9 +35,11 @@ config.suites.forEach((suite) => {
         await generateReadMe(commit, suiteYaml);
         await git('commit', '--message', commit.message);
 
+        // TODO(rosshamish) if local run, don't get most recent date
         const mostRecentDate = await getMostRecentWorkflowRunDate();
         await git('push');
 
+        // TODO(rosshamish) if local run, don't wait, run `act push` instead
         const completedRun = await getCompletedRunAfter(mostRecentDate);
         expect(completedRun.conclusion).toBe('success');
 

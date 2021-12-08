@@ -33,6 +33,7 @@ async function addRemote() {
   const testRepoUrl = process.env.TEST_REPO;
   const username = process.env.TEST_USER;
   const token = process.env.TEST_TOKEN;
+  // TODO(rosshamish) if local url, ignore test user and test token
   const authUrl = testRepoUrl.replace(/^https:\/\//, `https://${username}:${token}@`);
   await git('remote', 'add', 'origin', authUrl);
 }
