@@ -214,8 +214,7 @@ suites:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                 skip-push: true
-            - run: |
-              git push --follow-tags
+            - run: git push --follow-tags
     tests:
       - message: no keywords
         expected:

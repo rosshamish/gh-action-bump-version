@@ -174,7 +174,9 @@ It uses 3 [repository secrets](https://github.com/phips28/gh-action-bump-version
 2. `TEST_USER`, which is the Github username of a user who has write access to the test repo.
 3. `TEST_TOKEN`, which is a Personal Access Token (PAT) from the test user which has full repo access and also workflows access.
 
-To add a new test, follow the existing examples in `tests/end-to-end/config.yml`, for example:
+To add a new test, follow the existing examples in `tests/end-to-end/config.yml`. Keep in mind that the tests run in order, top to bottom, so version bumps are cumulative as the test suite goes on. 
+
+Example:
 
 ```yml
   - name: skip-push
