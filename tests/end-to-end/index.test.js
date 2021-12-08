@@ -21,7 +21,6 @@ config.suites.forEach((suite) => {
       await git('config', 'user.email', 'Test@Test.com');
       await git('config', 'user.name', 'Test Runner');
 
-      await git('add', pushYamlPath, '--force');
       const pushYamlPath = join('.github', 'workflows', 'push.yml');
       await mkdir(join(cwd(), '.github', 'workflows'), { recursive: true });
       await writeFile(join(cwd(), pushYamlPath), suiteYaml);
