@@ -12,14 +12,14 @@ const { clearWorkflowRuns } = require('./actionsApi');
  * @param {*} actionFileGlobPaths 
  * @param {*} baseBranchName 
  */
-module.exports = async function setupTestRepo(actionFileGlobPaths) {
-  const baseBranchName = 'TEST-ROSSHAMISH';
+module.exports = async function setupTestRepo(baseBranchName, actionFileGlobPaths) {
   const testRepoPath = resolve(__dirname, '..', '..', 'test-repo');
   if (existsSync(testRepoPath)) {
     await rm(testRepoPath, { recursive: true, force: true });
   }
   await mkdir(testRepoPath);
   chdir(testRepoPath);
+  // TODO(rosshamish) clearWorkflowRuns is failing and this whole func is silently throwing here
   await Promise.all([/*clearWorkflowRuns(baseBranchName), */createNpmPackage(), copyActionFiles(actionFileGlobPaths)]);
   await git('init', '--initial-branch', baseBranchName);
   await addRemote({

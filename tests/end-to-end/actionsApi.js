@@ -50,7 +50,7 @@ async function getWorkflowRuns(baseBranchName) {
   const result = await api(`${basePath}/runs`);
   let workflow_runs = result.workflow_runs || [];
   if (baseBranchName) {
-    workflow_runs = workflow_runs.filter((run) => run.startsWith(baseBranchName));
+    workflow_runs = workflow_runs.filter((run) => run.branch && run.branch.startsWith(baseBranchName));
   }
   return workflow_runs;
 }
