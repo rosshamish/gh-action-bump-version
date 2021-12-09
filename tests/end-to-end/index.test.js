@@ -12,19 +12,7 @@ dotenv.config();
 
 const config = getTestConfig();
 
-beforeAll(() => {
-  // Do everything on a branch name matching the Github Run ID we were
-  // triggered from, to avoid contention on the main branch.
-  let currentBranch = process.env.GITHUB_RUN_ID;
-
-  // No support for local runs.
-  // GITHUB_HEAD_REF is set only for pull request runs.
-  if (!process.env.GITHUB_HEAD_REF) {
-    process.exit(1);
-  }
-
-  setupTestRepo(config.actionFiles, currentBranch);
-});
+beforeAll(() => setupTestRepo(process.env.GITHUB_RUN_ID, config.actionFiles));
 
 config.suites.forEach((suite) => {
   const suiteYaml = yaml.dump(suite.yaml);

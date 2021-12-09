@@ -12,7 +12,7 @@ const { clearWorkflowRuns } = require('./actionsApi');
  * @param {*} actionFileGlobPaths 
  * @param {*} baseBranchName 
  */
-module.exports = async function setupTestRepo(actionFileGlobPaths, baseBranchName) {
+module.exports = async function setupTestRepo(baseBranchName, actionFileGlobPaths) {
   const testRepoPath = resolve(__dirname, '..', '..', 'test-repo');
   if (existsSync(testRepoPath)) {
     await rm(testRepoPath, { recursive: true, force: true });
