@@ -66,7 +66,6 @@ async function copyActionFiles(globPaths) {
 
 /**
  * Delete all tags and branches.
- * TODO(rosshamish) filter tags by prefix as well
  *
  * @param {*} baseBranchName (Optional) Filter to branches with this prefix
  */
@@ -75,7 +74,11 @@ async function deleteTagsAndBranches(baseBranchName) {
   if (listResult.stdout) {
     const lines = listResult.stdout.split('\n');
     const refs = lines.map((line) => line.split('\t')[1]).filter((ref) => 
-      ref.substring('refs/heads/'.length).startsWith(baseBranchName) &&
+      (
+        !baseBranchName ||
+        (ref.startsWith('refs/heads/') && ref.substring('refs/heads/'.length).startsWith(baseBranchName)) ||
+        (ref.startsWith('refs/tags/') && ref.substring('refs/tags/'.length).startsWith(baseBranchName))
+      ) &&
       ref !== 'refs/heads/main' // Leave main alone, no matter what
     );
     if (refs.length > 0) {

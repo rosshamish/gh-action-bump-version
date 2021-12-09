@@ -11,10 +11,16 @@ const { getMostRecentWorkflowRun, getWorkflowRun } = require('./actionsApi');
 dotenv.config();
 
 const config = getTestConfig();
+const RUN_ID = process.env.GITHUB_RUN_ID;
 
-beforeAll(() => setupTestRepo(process.env.GITHUB_RUN_ID, config.actionFiles));
+beforeAll(() => setupTestRepo(RUN_ID, config.actionFiles));
 
 config.suites.forEach((suite) => {
+  // TODO(rosshamish) prefix each tag w/ RUN_ID
+  // for each step in yaml.jobs[0].steps w/ uses: ./action
+  // 1. if with: tag-prefix:, tag-prefix = RUN_ID + tag_prefix
+  // 2. if with:, tag-prefix = RUN_ID
+  // 3. else, with: tag-prefix = RUN_ID
   const suiteYaml = yaml.dump(suite.yaml);
   describe(suite.name, () => {
     beforeAll(async () => {
@@ -28,9 +34,7 @@ config.suites.forEach((suite) => {
     });
     suite.tests.forEach((commit) => {
       test(commit.message, async () => {
-        baseBranchName = process.env.GITHUB_RUN_ID;
-
-        await generateReadMe(baseBranchName, commit, suiteYaml);
+        await generateReadMe(RUN_ID, commit, suiteYaml);
         await git('commit', '--message', commit.message);
 
         const mostRecentDate = await getMostRecentWorkflowRunDate();
@@ -39,7 +43,7 @@ config.suites.forEach((suite) => {
         const completedRun = await getCompletedRunAfter(mostRecentDate);
         expect(completedRun.conclusion).toBe('success');
 
-        await assertExpectation(baseBranchName, commit.expected);
+        await assertExpectation(RUN_ID, commit.expected);
       });
     });
   });
