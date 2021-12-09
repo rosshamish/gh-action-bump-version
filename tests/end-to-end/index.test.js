@@ -29,6 +29,9 @@ config.suites.forEach((suite) => {
   const suiteYaml = yaml.dump(suite.yaml);
   describe(suite.name, () => {
     beforeAll(async () => {
+      await git('config', 'user.name', 'Automated Version Bump Test');
+      await git('config', 'user.email', 'gh-action-bump-version-test@users.noreply.github.com');
+
       // Do everything on a branch name matching the Pull Request we were
       // triggered from, to avoid contention on the main branch.
       baseBranchName = process.env.GITHUB_HEAD_REF;
