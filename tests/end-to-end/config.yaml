@@ -215,8 +215,8 @@ suites:
               with:
                 skip-push: true
             - run: |
-              git push --follow-tags
-              git push --tags
+                git push --follow-tags
+                git push --tags
     tests:
       - message: no keywords
         expected:
