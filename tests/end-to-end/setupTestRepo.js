@@ -19,8 +19,7 @@ module.exports = async function setupTestRepo(baseBranchName, actionFileGlobPath
   }
   await mkdir(testRepoPath);
   chdir(testRepoPath);
-  // TODO(rosshamish) clearWorkflowRuns is failing and this whole func is silently throwing here
-  await Promise.all([/*clearWorkflowRuns(baseBranchName), */createNpmPackage(), copyActionFiles(actionFileGlobPaths)]);
+  await Promise.all([clearWorkflowRuns(baseBranchName), createNpmPackage(), copyActionFiles(actionFileGlobPaths)]);
   await git('init', '--initial-branch', baseBranchName);
   await addRemote({
     testRepoUrl: process.env.TEST_REPO,
@@ -75,7 +74,10 @@ async function deleteTagsAndBranches(baseBranchName) {
   const listResult = await git({ suppressOutput: true }, 'ls-remote', '--tags', '--heads', 'origin');
   if (listResult.stdout) {
     const lines = listResult.stdout.split('\n');
-    const refs = lines.map((line) => line.split('\t')[1]).filter((ref) => ref !== `refs/heads/${baseBranchName}`);
+    const refs = lines.map((line) => line.split('\t')[1]).filter((ref) => 
+      ref.substring('refs/heads/'.length).startsWith(baseBranchName) &&
+      ref !== 'refs/heads/main' // Leave main alone, no matter what
+    );
     if (refs.length > 0) {
       await git('push', 'origin', '--delete', ...refs);
     }
