@@ -218,7 +218,7 @@ suites:
                 git push --follow-tags
                 git push --tags
     tests:
-      - message: no keywords, skip push then push after
+      - message: no keywords
         expected:
           version: 4.1.3
           message: 'ci: version bump to 4.1.3'
