@@ -12,7 +12,7 @@ dotenv.config();
 
 const config = getTestConfig();
 
-beforeAll(() => setupTestRepo(process.env.GITHUB_RUN_ID, config.actionFiles));
+beforeAll(() => await setupTestRepo(process.env.GITHUB_RUN_ID, config.actionFiles));
 
 config.suites.forEach((suite) => {
   const suiteYaml = yaml.dump(suite.yaml);
