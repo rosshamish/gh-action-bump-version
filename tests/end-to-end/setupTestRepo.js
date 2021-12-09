@@ -20,7 +20,7 @@ module.exports = async function setupTestRepo(actionFileGlobPaths) {
   }
   await mkdir(testRepoPath);
   chdir(testRepoPath);
-  await Promise.all([clearWorkflowRuns(baseBranchName), createNpmPackage(), copyActionFiles(actionFileGlobPaths)]);
+  await Promise.all([/*clearWorkflowRuns(baseBranchName), */createNpmPackage(), copyActionFiles(actionFileGlobPaths)]);
   await git('init', '--initial-branch', baseBranchName);
   await addRemote({
     testRepoUrl: process.env.TEST_REPO,
