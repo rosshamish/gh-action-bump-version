@@ -12,7 +12,15 @@ dotenv.config();
 
 const config = getTestConfig();
 
-beforeAll(() => await setupTestRepo(process.env.GITHUB_RUN_ID, config.actionFiles));
+beforeAll(() => {
+  // No support for local runs.
+  // GITHUB_HEAD_REF is set only for pull request runs.
+  if (!process.env.GITHUB_HEAD_REF) {
+    process.exit(1);
+  }
+
+  await setupTestRepo(process.env.GITHUB_RUN_ID, config.actionFiles);
+});
 
 config.suites.forEach((suite) => {
   const suiteYaml = yaml.dump(suite.yaml);
