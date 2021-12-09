@@ -13,12 +13,13 @@ dotenv.config();
 const config = getTestConfig();
 
 beforeAll(() => {
-  let currentBranch = 'main';
-  if (process.env.GITHUB_HEAD_REF) {
-    // Comes from a pull request
-    currentBranch = process.env.GITHUB_HEAD_REF;
-  } else {
-    // No support for local runs.
+  // Do everything on a branch name matching the Github Run ID we were
+  // triggered from, to avoid contention on the main branch.
+  let currentBranch = process.env.GITHUB_RUN_ID;
+
+  // No support for local runs.
+  // GITHUB_HEAD_REF is set only for pull request runs.
+  if (!process.env.GITHUB_HEAD_REF) {
     process.exit(1);
   }
 
@@ -32,10 +33,8 @@ config.suites.forEach((suite) => {
       await git('config', 'user.name', 'Automated Version Bump Test');
       await git('config', 'user.email', 'gh-action-bump-version-test@users.noreply.github.com');
 
-      // Do everything on a branch name matching the Pull Request we were
-      // triggered from, to avoid contention on the main branch.
-      baseBranchName = process.env.GITHUB_HEAD_REF;
-      await git('checkout', baseBranchName);
+      baseBranchName = process.env.GITHUB_RUN_ID;
+      await git('checkout', '-b', baseBranchName);
 
       const pushYamlPath = join('.github', 'workflows', 'push.yml');
       await mkdir(join(cwd(), '.github', 'workflows'), { recursive: true });
@@ -44,7 +43,7 @@ config.suites.forEach((suite) => {
     });
     suite.tests.forEach((commit) => {
       test(commit.message, async () => {
-        baseBranchName = process.env.GITHUB_HEAD_REF;
+        baseBranchName = process.env.GITHUB_RUN_ID;
 
         await generateReadMe(baseBranchName, commit, suiteYaml);
         await git('commit', '--message', commit.message);
