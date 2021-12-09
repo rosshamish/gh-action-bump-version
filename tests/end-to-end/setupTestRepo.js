@@ -19,20 +19,19 @@ module.exports = async function setupTestRepo(baseBranchName, actionFileGlobPath
   }
   await mkdir(testRepoPath);
   chdir(testRepoPath);
-  await Promise.all([clearWorkflowRuns(baseBranchName), createNpmPackage(), copyActionFiles(actionFileGlobPaths)]);
-  await git('init', '--initial-branch', baseBranchName);
-  await addRemote({
-    testRepoUrl: process.env.TEST_REPO,
-    username: process.env.TEST_USER,
-    token: process.env.TEST_TOKEN
-  });
-  console.log('ROSSHAMISH');
-  await git('config', 'user.name', 'Automated Version Bump Test');
-  await git('config', 'user.email', 'gh-action-bump-version-test@users.noreply.github.com');
-  await git('add', '.');
-  await git('commit', '--message', 'initial commit (version 1.0.0)');
-  await git('push', '--force', '--set-upstream', 'origin', baseBranchName);
-  await deleteTagsAndBranches(baseBranchName);
+  // await Promise.all([clearWorkflowRuns(baseBranchName), createNpmPackage(), copyActionFiles(actionFileGlobPaths)]);
+  // await git('init', '--initial-branch', baseBranchName);
+  // await addRemote({
+  //   testRepoUrl: process.env.TEST_REPO,
+  //   username: process.env.TEST_USER,
+  //   token: process.env.TEST_TOKEN
+  // });
+  // await git('config', 'user.name', 'Automated Version Bump Test');
+  // await git('config', 'user.email', 'gh-action-bump-version-test@users.noreply.github.com');
+  // await git('add', '.');
+  // await git('commit', '--message', 'initial commit (version 1.0.0)');
+  // await git('push', '--force', '--set-upstream', 'origin', baseBranchName);
+  // await deleteTagsAndBranches(baseBranchName);
 };
 
 function createNpmPackage() {
