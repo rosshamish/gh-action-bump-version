@@ -33,9 +33,6 @@ config.suites.forEach((suite) => {
       await git('config', 'user.name', 'Automated Version Bump Test');
       await git('config', 'user.email', 'gh-action-bump-version-test@users.noreply.github.com');
 
-      baseBranchName = process.env.GITHUB_RUN_ID;
-      await git('checkout', '-b', baseBranchName);
-
       const pushYamlPath = join('.github', 'workflows', 'push.yml');
       await mkdir(join(cwd(), '.github', 'workflows'), { recursive: true });
       await writeFile(join(cwd(), pushYamlPath), suiteYaml);

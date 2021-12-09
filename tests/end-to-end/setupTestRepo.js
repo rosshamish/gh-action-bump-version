@@ -26,6 +26,8 @@ module.exports = async function setupTestRepo(actionFileGlobPaths, baseBranchNam
     username: process.env.TEST_USER,
     token: process.env.TEST_TOKEN
   });
+  await git('config', 'user.name', 'Automated Version Bump Test');
+  await git('config', 'user.email', 'gh-action-bump-version-test@users.noreply.github.com');
   await git('add', '.');
   await git('commit', '--message', 'initial commit (version 1.0.0)');
   await git('push', '--force', '--set-upstream', 'origin', baseBranchName);
