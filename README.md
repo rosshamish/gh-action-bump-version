@@ -149,3 +149,56 @@ Set false you want to avoid pushing the new version tag/package.json. Example:
   with:
     push: false
 ```
+
+## Contributing
+
+### Tests
+
+Pull requests are tested with the Github Actions workflow at `./github/workflows/pull-request.yml`, which runs
+an end to end test suite at `tests/end-to-end/index.test.js`. This test suite commits and pushes a series of changes to a blank test repo, allowing an `on: push` trigger to run this action on each push, then asserts certain expectations about the state of the repo after the action runs.
+
+It uses 3 [repository secrets](https://github.com/phips28/gh-action-bump-version/settings/secrets/actions):
+
+1. `TEST_REPO`, which is a URL in the form https://github.com/user-name/repo-name.git which points to a blank public Github repo.
+2. `TEST_USER`, which is the Github username of a user who has write access to the test repo.
+3. `TEST_TOKEN`, which is a Personal Access Token (PAT) from the test user which has full repo access and also workflows access.
+
+To add a new test, follow the existing examples in `tests/end-to-end/config.yml`. Keep in mind that the tests run in order, top to bottom, so version bumps are cumulative as the test suite goes on. 
+
+Example:
+
+```yml
+  - name: skip-push
+    yaml:
+      # A workflow which is triggered "on: push" for each item in "tests" below.
+      # Typically used to test different inputs to this action.
+      name: Bump Version (Skip Push)
+      on:
+        push:
+      jobs:
+        bump-version:
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@v2
+            - id: version-bump
+              uses: ./action
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                skip-push: true
+    # Each item in "tests" will produce a commit which will trigger
+    # the "on: push" workflow above.
+    tests:
+      - message: skip pushing the bumped version commit
+        # We can expect certain things to be true about the state of the repo
+        # **after** the workflow runs.
+        expected:
+          # Branch to check out before asserting expectations
+          branch: main
+          # Expected version in package.json
+          version: 4.1.4
+          # Expected message of the latest commit
+          message: skip pushing the bumped version commit
+          # Expected tag of the latest commit
+          tag: 4.1.4
+```

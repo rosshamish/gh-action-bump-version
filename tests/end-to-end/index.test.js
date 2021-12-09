@@ -18,19 +18,28 @@ config.suites.forEach((suite) => {
   const suiteYaml = yaml.dump(suite.yaml);
   describe(suite.name, () => {
     beforeAll(async () => {
+      await git('config', 'user.email', 'Test@Runner.com');
+      await git('config', 'user.name', 'Test Runner');
+
       const pushYamlPath = join('.github', 'workflows', 'push.yml');
       await mkdir(join(cwd(), '.github', 'workflows'), { recursive: true });
       await writeFile(join(cwd(), pushYamlPath), suiteYaml);
-      await git('add', pushYamlPath);
+
+      // TODO(rosshamish) check out a branch based on the current PR branch
+      // or current ref being tested, to avoid branch contention if multiple
+      // PRs are being validated at the same time
+      await git('add', pushYamlPath, '--force');
     });
     suite.tests.forEach((commit) => {
       test(commit.message, async () => {
         await generateReadMe(commit, suiteYaml);
         await git('commit', '--message', commit.message);
 
+        // TODO(rosshamish) if local run, don't get most recent date
         const mostRecentDate = await getMostRecentWorkflowRunDate();
         await git('push');
 
+        // TODO(rosshamish) if local run, don't wait, run `act push` instead
         const completedRun = await getCompletedRunAfter(mostRecentDate);
         expect(completedRun.conclusion).toBe('success');
 
@@ -62,7 +71,7 @@ async function generateReadMe(commit, suiteYaml) {
     generateExpectationText(commit.expected),
   ].join('\n');
   await writeFile(join(cwd(), readmePath), readMeContents);
-  await git('add', readmePath);
+  await git('add', readmePath, '--force');
 }
 
 async function getCompletedRunAfter(date) {
@@ -102,7 +111,7 @@ async function getMostRecentWorkflowRunDate() {
 function generateExpectationText({
   version: expectedVersion,
   tag: expectedTag,
-  branch: expectedBranch,
+  branch: expectedBranch, // TODO(rosshamish) prefix w/ base branch
   message: expectedMessage,
 }) {
   const results = [`- **Version:** ${expectedVersion}`];
@@ -121,7 +130,7 @@ function generateExpectationText({
 async function assertExpectation({
   version: expectedVersion,
   tag: expectedTag,
-  branch: expectedBranch,
+  branch: expectedBranch, // TODO(rosshamish) prefix w/ base branch
   message: expectedMessage,
 }) {
   if (expectedTag === undefined) {
@@ -144,7 +153,7 @@ async function assertExpectation({
   expect(latestTag).toBe(expectedTag);
   expect(latestMessage).toBe(expectedMessage);
   if (expectedBranch) {
-    await git('checkout', 'main');
+    await git('checkout', 'main'); // TODO(rosshamish) checkout the base branch instead of main
   }
 }
 
