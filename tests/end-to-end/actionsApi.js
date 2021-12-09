@@ -1,14 +1,23 @@
 const { default: fetch } = require('node-fetch');
 
-async function clearWorkflowRuns() {
-  const runs = await getWorkflowRuns();
+/**
+ * Deletes all workflow runs in the remote repo.
+ *
+ * @param {*} baseBranchName (Optional) Filter to runs from branches with this prefix
+ */
+async function clearWorkflowRuns(baseBranchName) {
+  const runs = await getWorkflowRuns(baseBranchName);
   const basePath = getActionsBasePath();
   await Promise.all(runs.map((run) => api(`${basePath}/runs/${run.id}`, { method: 'DELETE' })));
 }
 exports.clearWorkflowRuns = clearWorkflowRuns;
 
-async function getMostRecentWorkflowRun() {
-  const runs = await getWorkflowRuns();
+/**
+ * @param {*} baseBranchName (Optional) Filter to runs from branches with this prefix
+ * @returns The most recent workflow run in the remote repo.
+ */
+async function getMostRecentWorkflowRun(baseBranchName) {
+  const runs = await getWorkflowRuns(baseBranchName);
   if (runs.length === 0) {
     return null;
   }
@@ -32,10 +41,18 @@ async function getWorkflowRun(id) {
 }
 exports.getWorkflowRun = getWorkflowRun;
 
-async function getWorkflowRuns() {
+/**
+ * @param {*} baseBranchName (Optional) Filter to runs from branches with this prefix
+ * @returns List of workflow runs in the remote repo.
+ */
+async function getWorkflowRuns(baseBranchName) {
   const basePath = getActionsBasePath();
   const result = await api(`${basePath}/runs`);
-  return result.workflow_runs || [];
+  let workflow_runs = result.workflow_runs || [];
+  if (baseBranchName) {
+    workflow_runs = workflow_runs.filter((run) => run.startsWith(baseBranchName));
+  }
+  return workflow_runs;
 }
 
 function getActionsBasePath() {

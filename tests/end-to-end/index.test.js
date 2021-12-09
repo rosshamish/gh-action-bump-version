@@ -12,38 +12,47 @@ dotenv.config();
 
 const config = getTestConfig();
 
-beforeAll(() => setupTestRepo(config.actionFiles));
+beforeAll(() => {
+  let currentBranch = 'main';
+  if (process.env.GITHUB_HEAD_REF) {
+    // Comes from a pull request
+    currentBranch = process.env.GITHUB_HEAD_REF;
+  } else {
+    // No support for local runs.
+    process.exit(1);
+  }
+
+  setupTestRepo(config.actionFiles, currentBranch);
+});
 
 config.suites.forEach((suite) => {
   const suiteYaml = yaml.dump(suite.yaml);
   describe(suite.name, () => {
     beforeAll(async () => {
-      await git('config', 'user.email', 'Test@Runner.com');
-      await git('config', 'user.name', 'Test Runner');
+      // Do everything on a branch name matching the Pull Request we were
+      // triggered from, to avoid contention on the main branch.
+      baseBranchName = process.env.GITHUB_HEAD_REF;
+      await git('checkout', baseBranchName);
 
       const pushYamlPath = join('.github', 'workflows', 'push.yml');
       await mkdir(join(cwd(), '.github', 'workflows'), { recursive: true });
       await writeFile(join(cwd(), pushYamlPath), suiteYaml);
-
-      // TODO(rosshamish) check out a branch based on the current PR branch
-      // or current ref being tested, to avoid branch contention if multiple
-      // PRs are being validated at the same time
       await git('add', pushYamlPath, '--force');
     });
     suite.tests.forEach((commit) => {
       test(commit.message, async () => {
-        await generateReadMe(commit, suiteYaml);
+        baseBranchName = process.env.GITHUB_HEAD_REF;
+
+        await generateReadMe(baseBranchName, commit, suiteYaml);
         await git('commit', '--message', commit.message);
 
-        // TODO(rosshamish) if local run, don't get most recent date
         const mostRecentDate = await getMostRecentWorkflowRunDate();
         await git('push');
 
-        // TODO(rosshamish) if local run, don't wait, run `act push` instead
         const completedRun = await getCompletedRunAfter(mostRecentDate);
         expect(completedRun.conclusion).toBe('success');
 
-        await assertExpectation(commit.expected);
+        await assertExpectation(baseBranchName, commit.expected);
       });
     });
   });
@@ -57,7 +66,7 @@ function getTestConfig() {
   return config;
 }
 
-async function generateReadMe(commit, suiteYaml) {
+async function generateReadMe(baseBranchName, commit, suiteYaml) {
   const readmePath = 'README.md';
   const readMeContents = [
     '# Test Details',
@@ -68,7 +77,7 @@ async function generateReadMe(commit, suiteYaml) {
     '## Message',
     commit.message,
     '## Expectation',
-    generateExpectationText(commit.expected),
+    generateExpectationText(baseBranchName, commit.expected),
   ].join('\n');
   await writeFile(join(cwd(), readmePath), readMeContents);
   await git('add', readmePath, '--force');
@@ -108,10 +117,10 @@ async function getMostRecentWorkflowRunDate() {
   return date;
 }
 
-function generateExpectationText({
+function generateExpectationText(baseBranchName, {
   version: expectedVersion,
   tag: expectedTag,
-  branch: expectedBranch, // TODO(rosshamish) prefix w/ base branch
+  branch: expectedBranch,
   message: expectedMessage,
 }) {
   const results = [`- **Version:** ${expectedVersion}`];
@@ -119,7 +128,7 @@ function generateExpectationText({
     results.push(`- **Tag:** ${expectedTag}`);
   }
   if (expectedBranch) {
-    results.push(`- **Branch:** ${expectedBranch}`);
+    results.push(`- **Branch:** ${baseBranchName}-${expectedBranch}`);
   }
   if (expectedMessage) {
     results.push(`- **Message:** ${expectedMessage}`);
@@ -127,18 +136,18 @@ function generateExpectationText({
   return results.join('\n');
 }
 
-async function assertExpectation({
+async function assertExpectation(baseBranchName, {
   version: expectedVersion,
   tag: expectedTag,
-  branch: expectedBranch, // TODO(rosshamish) prefix w/ base branch
+  branch: expectedBranch,
   message: expectedMessage,
 }) {
   if (expectedTag === undefined) {
     expectedTag = expectedVersion;
   }
   if (expectedBranch) {
-    await git('fetch', 'origin', expectedBranch);
-    await git('checkout', expectedBranch);
+    await git('fetch', 'origin', `${baseBranchName}-${expectedBranch}`);
+    await git('checkout', `${baseBranchName}-${expectedBranch}`);
   }
   await git('pull');
   const [packageVersion, latestTag, latestMessage] = await Promise.all([
@@ -153,7 +162,7 @@ async function assertExpectation({
   expect(latestTag).toBe(expectedTag);
   expect(latestMessage).toBe(expectedMessage);
   if (expectedBranch) {
-    await git('checkout', 'main'); // TODO(rosshamish) checkout the base branch instead of main
+    await git('checkout', baseBranchName);
   }
 }
 

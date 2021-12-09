@@ -7,21 +7,30 @@ const git = require('./git');
 const glob = require('tiny-glob');
 const { clearWorkflowRuns } = require('./actionsApi');
 
-module.exports = async function setupTestRepo(actionFileGlobPaths) {
+/**
+ * Sets up a local test repo
+ * @param {*} actionFileGlobPaths 
+ * @param {*} baseBranchName 
+ */
+module.exports = async function setupTestRepo(actionFileGlobPaths, baseBranchName) {
   const testRepoPath = resolve(__dirname, '..', '..', 'test-repo');
   if (existsSync(testRepoPath)) {
     await rm(testRepoPath, { recursive: true, force: true });
   }
   await mkdir(testRepoPath);
   chdir(testRepoPath);
-  await Promise.all([clearWorkflowRuns(), createNpmPackage(), copyActionFiles(actionFileGlobPaths)]);
-  await git('init', '--initial-branch', 'main');
-  await addRemote();
-  await git('config', 'user.name', 'Automated Version Bump Test');
-  await git('config', 'user.email', 'gh-action-bump-version-test@users.noreply.github.com');
+  await Promise.all([clearWorkflowRuns(baseBranchName), createNpmPackage(), copyActionFiles(actionFileGlobPaths)]);
+  await git('init', '--initial-branch', baseBranchName);
+  await addRemote({
+    testRepoUrl: process.env.TEST_REPO,
+    username: process.env.TEST_USER,
+    token: process.env.TEST_TOKEN
+  });
+  await git('config', '--local', 'user.name', 'Automated Version Bump Test');
+  await git('config', '--local', 'user.email', 'gh-action-bump-version-test@users.noreply.github.com');
   await git('add', '.');
   await git('commit', '--message', 'initial commit (version 1.0.0)');
-  await git('push', '--force', '--set-upstream', 'origin', 'main');
+  await git('push', '--force', '--set-upstream', 'origin', baseBranchName);
   await deleteTagsAndBranches();
 };
 
@@ -29,11 +38,7 @@ function createNpmPackage() {
   return exec('npm', 'init', '-y');
 }
 
-async function addRemote() {
-  const testRepoUrl = process.env.TEST_REPO;
-  const username = process.env.TEST_USER;
-  const token = process.env.TEST_TOKEN;
-  // TODO(rosshamish) if local url, ignore test user and test token
+async function addRemote({ testRepoUrl, username, token }) {
   const authUrl = testRepoUrl.replace(/^https:\/\//, `https://${username}:${token}@`);
   await git('remote', 'add', 'origin', authUrl);
 }
@@ -59,11 +64,17 @@ async function copyActionFiles(globPaths) {
   );
 }
 
-async function deleteTagsAndBranches() {
+/**
+ * Delete all tags and branches.
+ * TODO(rosshamish) filter tags by prefix as well
+ *
+ * @param {*} baseBranchName (Optional) Filter to branches with this prefix
+ */
+async function deleteTagsAndBranches(baseBranchName) {
   const listResult = await git({ suppressOutput: true }, 'ls-remote', '--tags', '--heads', 'origin');
   if (listResult.stdout) {
     const lines = listResult.stdout.split('\n');
-    const refs = lines.map((line) => line.split('\t')[1]).filter((ref) => ref !== 'refs/heads/main');
+    const refs = lines.map((line) => line.split('\t')[1]).filter((ref) => ref !== `refs/heads/${baseBranchName}`);
     if (refs.length > 0) {
       await git('push', 'origin', '--delete', ...refs);
     }
