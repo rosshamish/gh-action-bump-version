@@ -12,7 +12,7 @@ dotenv.config();
 
 const config = getTestConfig();
 
-beforeAll(() => {
+beforeAll(async () => {
   // No support for local runs.
   // GITHUB_HEAD_REF is set only for pull request runs.
   if (!process.env.GITHUB_HEAD_REF) {
