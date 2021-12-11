@@ -108,7 +108,7 @@ No commit is made after the version is bumped (optional). Must be used in combin
 ```
 
 #### **skip-push:**
-No push is made after the version is bumped (optional). Example:
+If true, skip pushing any commits or tags created after the version bump (optional). Example:
 ```yaml
 - name:  'Automated Version Bump'
   uses:  'phips28/gh-action-bump-version@master'
