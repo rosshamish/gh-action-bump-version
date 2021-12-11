@@ -37,9 +37,11 @@ config.suites.forEach((suite) => {
         await generateReadMe(RUN_ID, commit, suiteYaml);
         await git('commit', '--message', commit.message);
 
+        // TODO(rosshamish) if local run, don't get most recent date
         const mostRecentDate = await getMostRecentWorkflowRunDate();
         await git('push');
 
+        // TODO(rosshamish) if local run, don't wait, run `act push` instead
         const completedRun = await getCompletedRunAfter(mostRecentDate);
         expect(completedRun.conclusion).toBe('success');
 
@@ -111,7 +113,7 @@ async function getMostRecentWorkflowRunDate() {
 function generateExpectationText(baseBranchName, {
   version: expectedVersion,
   tag: expectedTag,
-  branch: expectedBranch,
+  branch: expectedBranch, // TODO(rosshamish) prefix w/ base branch
   message: expectedMessage,
 }) {
   const results = [`- **Version:** ${expectedVersion}`];
@@ -130,7 +132,7 @@ function generateExpectationText(baseBranchName, {
 async function assertExpectation(baseBranchName, {
   version: expectedVersion,
   tag: expectedTag,
-  branch: expectedBranch,
+  branch: expectedBranch, // TODO(rosshamish) prefix w/ base branch
   message: expectedMessage,
 }) {
   if (expectedTag === undefined) {
