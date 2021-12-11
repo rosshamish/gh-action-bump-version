@@ -76,7 +76,7 @@ async function deleteTagsAndBranches(baseBranchName) {
     const refs = lines.map((line) => line.split('\t')[1]).filter((ref) => 
       (
         !baseBranchName ||
-        (ref.startsWith('refs/heads/') && ref.substring('refs/heads/'.length).startsWith(baseBranchName)) ||
+        (ref.startsWith('refs/heads/') && ref.substring('refs/heads/'.length).startsWith(baseBranchName) && (ref.startsWith('refs/heads/') && ref != `refs/heads/${baseBranchName}`) ||
         (ref.startsWith('refs/tags/') && ref.substring('refs/tags/'.length).startsWith(baseBranchName))
       ) &&
       ref !== 'refs/heads/main' // Leave main alone, no matter what
