@@ -11,30 +11,41 @@ const { getMostRecentWorkflowRun, getWorkflowRun } = require('./actionsApi');
 dotenv.config();
 
 const config = getTestConfig();
+const RUN_ID = process.env.GITHUB_RUN_ID;
 
-beforeAll(() => setupTestRepo(config.actionFiles));
+beforeAll(() => setupTestRepo(RUN_ID, config.actionFiles));
 
 config.suites.forEach((suite) => {
+  // TODO(rosshamish) prefix each tag w/ RUN_ID
+  // for each step in yaml.jobs[0].steps w/ uses: ./action
+  // 1. if with: tag-prefix:, tag-prefix = RUN_ID + tag_prefix
+  // 2. if with:, tag-prefix = RUN_ID
+  // 3. else, with: tag-prefix = RUN_ID
   const suiteYaml = yaml.dump(suite.yaml);
   describe(suite.name, () => {
     beforeAll(async () => {
+      await git('config', 'user.name', 'Automated Version Bump Test');
+      await git('config', 'user.email', 'gh-action-bump-version-test@users.noreply.github.com');
+
       const pushYamlPath = join('.github', 'workflows', 'push.yml');
       await mkdir(join(cwd(), '.github', 'workflows'), { recursive: true });
       await writeFile(join(cwd(), pushYamlPath), suiteYaml);
-      await git('add', pushYamlPath);
+      await git('add', pushYamlPath, '--force');
     });
     suite.tests.forEach((commit) => {
       test(commit.message, async () => {
-        await generateReadMe(commit, suiteYaml);
+        await generateReadMe(RUN_ID, commit, suiteYaml);
         await git('commit', '--message', commit.message);
 
+        // TODO(rosshamish) if local run, don't get most recent date
         const mostRecentDate = await getMostRecentWorkflowRunDate();
         await git('push');
 
+        // TODO(rosshamish) if local run, don't wait, run `act push` instead
         const completedRun = await getCompletedRunAfter(mostRecentDate);
         expect(completedRun.conclusion).toBe('success');
 
-        await assertExpectation(commit.expected);
+        await assertExpectation(RUN_ID, commit.expected);
       });
     });
   });
@@ -48,7 +59,7 @@ function getTestConfig() {
   return config;
 }
 
-async function generateReadMe(commit, suiteYaml) {
+async function generateReadMe(baseBranchName, commit, suiteYaml) {
   const readmePath = 'README.md';
   const readMeContents = [
     '# Test Details',
@@ -59,10 +70,10 @@ async function generateReadMe(commit, suiteYaml) {
     '## Message',
     commit.message,
     '## Expectation',
-    generateExpectationText(commit.expected),
+    generateExpectationText(baseBranchName, commit.expected),
   ].join('\n');
   await writeFile(join(cwd(), readmePath), readMeContents);
-  await git('add', readmePath);
+  await git('add', readmePath, '--force');
 }
 
 async function getCompletedRunAfter(date) {
@@ -99,10 +110,10 @@ async function getMostRecentWorkflowRunDate() {
   return date;
 }
 
-function generateExpectationText({
+function generateExpectationText(baseBranchName, {
   version: expectedVersion,
   tag: expectedTag,
-  branch: expectedBranch,
+  branch: expectedBranch, // TODO(rosshamish) prefix w/ base branch
   message: expectedMessage,
 }) {
   const results = [`- **Version:** ${expectedVersion}`];
@@ -110,7 +121,7 @@ function generateExpectationText({
     results.push(`- **Tag:** ${expectedTag}`);
   }
   if (expectedBranch) {
-    results.push(`- **Branch:** ${expectedBranch}`);
+    results.push(`- **Branch:** ${baseBranchName}-${expectedBranch}`);
   }
   if (expectedMessage) {
     results.push(`- **Message:** ${expectedMessage}`);
@@ -118,18 +129,18 @@ function generateExpectationText({
   return results.join('\n');
 }
 
-async function assertExpectation({
+async function assertExpectation(baseBranchName, {
   version: expectedVersion,
   tag: expectedTag,
-  branch: expectedBranch,
+  branch: expectedBranch, // TODO(rosshamish) prefix w/ base branch
   message: expectedMessage,
 }) {
   if (expectedTag === undefined) {
     expectedTag = expectedVersion;
   }
   if (expectedBranch) {
-    await git('fetch', 'origin', expectedBranch);
-    await git('checkout', expectedBranch);
+    await git('fetch', 'origin', `${baseBranchName}-${expectedBranch}`);
+    await git('checkout', `${baseBranchName}-${expectedBranch}`);
   }
   await git('pull');
   const [packageVersion, latestTag, latestMessage] = await Promise.all([
@@ -144,7 +155,7 @@ async function assertExpectation({
   expect(latestTag).toBe(expectedTag);
   expect(latestMessage).toBe(expectedMessage);
   if (expectedBranch) {
-    await git('checkout', 'main');
+    await git('checkout', baseBranchName);
   }
 }
 
